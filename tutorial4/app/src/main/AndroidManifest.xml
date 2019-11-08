@@ -12,7 +12,8 @@
         <service
             android:name=".TimeService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true"
+            android:process=":timeProcess"></service>
 
         <activity android:name=".MainActivity">
             <intent-filter>

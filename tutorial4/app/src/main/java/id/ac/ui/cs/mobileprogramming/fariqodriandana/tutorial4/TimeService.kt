@@ -13,31 +13,17 @@ const val MSG_GET_TIME = 1
 
 class TimeService : Service() {
 
-    private lateinit var mMessenger: Messenger
-
     override fun onBind(intent: Intent): IBinder {
-        mMessenger = Messenger(IncomingHandler(this))
-        return mMessenger.binder
+        return binder
     }
 
+    private val binder = object : ITimeAidlInterface.Stub() {
+        override fun getPid(): Int = Process.myPid()
 
-    internal class IncomingHandler(context: Context, private val applicationContext: Context = context.applicationContext) : Handler() {
-        override fun handleMessage(msg: Message) {
-            when(msg.what) {
-                MSG_GET_TIME -> {
-                    val currTime = msg.obj as Long
-                    val dateFormatter = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale("id-ID"))
-                    try {
-                        msg.replyTo.send(Message.obtain(null, MSG_GET_TIME, dateFormatter.format(currTime)))
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
-                    }
-//                    Toast.makeText(applicationContext, dateFormatter.format(currTime), Toast.LENGTH_LONG).show()
-                }
-                else -> {
-                    super.handleMessage(msg)
-                }
-            }
+        override fun getTimeString(timeMillis: Long): String {
+            val dateFormatter = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale("id-ID"))
+            Log.d("time", dateFormatter.format(timeMillis))
+            return dateFormatter.format(timeMillis)
         }
     }
 }

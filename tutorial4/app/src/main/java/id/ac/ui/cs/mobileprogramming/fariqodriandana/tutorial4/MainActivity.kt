@@ -1,46 +1,29 @@
 package id.ac.ui.cs.mobileprogramming.fariqodriandana.tutorial4
 
+import android.app.Service
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
+import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    private var mService: Messenger? = null
+    private var mService: ITimeAidlInterface? = null
     private var mIsBound = false
-    private lateinit var mMessenger: Messenger
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        mMessenger = Messenger(IncomingHandler(time_view))
+        Log.d("PID Activity", Process.myPid().toString())
         button_time.setOnClickListener {
             if (!mIsBound) return@setOnClickListener
-            val msg = Message.obtain(null, MSG_GET_TIME, System.currentTimeMillis())
-            msg.replyTo = mMessenger
-            try {
-                mService?.send(msg)
-            } catch (e: RemoteException) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    internal class IncomingHandler(private val textView: TextView) : Handler() {
-        override fun handleMessage(msg: Message) {
-            when (msg.what) {
-                MSG_GET_TIME -> {
-                    val timeFormatted = msg.obj as String
-                    textView.text = timeFormatted
-                }
-                else -> {
-                    super.handleMessage(msg)
-                }
+            if (mService != null) {
+                time_view.text = mService!!.getTimeString(System.currentTimeMillis())
             }
         }
     }
@@ -51,8 +34,8 @@ class MainActivity : AppCompatActivity() {
             mIsBound = false
         }
 
-        override fun onServiceConnected(p0: ComponentName?, service: IBinder?) {
-            mService = Messenger(service)
+        override fun onServiceConnected(p0: ComponentName?, boundService: IBinder?) {
+            mService = ITimeAidlInterface.Stub.asInterface(boundService)
             mIsBound = true
         }
     }
@@ -60,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         Intent(this, TimeService::class.java).also {
-            bindService(it, mConnection, Context.BIND_AUTO_CREATE)
+            bindService(it, mConnection, Service.BIND_AUTO_CREATE)
         }
     }
 
